@@ -13,17 +13,6 @@ const styleGuide = {
   ],
 };
 
-const brunchInsightGuide = `
-[Brunch Insight Writing Prompt 적용 규칙]
-- 목적: 감정 -> 개념 -> 통찰 -> 메시지 순서를 살려 브런치용 서정/철학 에세이 완성도 강화.
-- 1) 감정·관찰: 감정의 출발 장면과 감각(빛, 소리, 온도 등) 보강 여부 점검.
-- 2) 개념·연결: 감정과 개념, 은유, 반대편 진실의 연결이 자연스러운지 점검.
-- 3) 통찰·확장: 개인 깨달음이 삶/세상으로 확장되는 문장이 있는지 점검.
-- 4) 마무리·반성: 내려놓음/수용의 정서와 독자에게 남길 한 문장을 점검.
-- 5) 글쓰기 모드: A 감정 중심 / B 철학적 사유 / C 회고적 서사 / D 실용적 인사이트.
-- 6) 톤앤매너: 짧고 따뜻한 문장, 교훈보다 여운, 첫 문장은 이미지처럼, 마지막 문장은 여운처럼.
-`;
-
 const quotes = [
   { text: "글을 쓴다는 것은 침묵 속에서 목소리를 만드는 일이다.", by: "어슐러 K. 르 귄" },
   { text: "완벽한 첫 문장은 없다. 좋은 퇴고만 있을 뿐이다.", by: "어니스트 헤밍웨이" },
@@ -37,8 +26,6 @@ const quotes = [
 const el = {
   dailyQuote: document.getElementById("dailyQuote"),
   draftInput: document.getElementById("draftInput"),
-  apiBaseUrl: document.getElementById("apiBaseUrl"),
-  model: document.getElementById("model"),
   proofreadBtn: document.getElementById("proofreadBtn"),
   copyRevisedBtn: document.getElementById("copyRevisedBtn"),
   copyStatus: document.getElementById("copyStatus"),
@@ -46,23 +33,20 @@ const el = {
   changeLogBody: document.getElementById("changeLogBody"),
   editorOpinion: document.getElementById("editorOpinion"),
   makePromptsBtn: document.getElementById("makePromptsBtn"),
-  generateImageBtn: document.getElementById("generateImageBtn"),
-  imageModel: document.getElementById("imageModel"),
-  imageSize: document.getElementById("imageSize"),
   promptChatgpt: document.getElementById("promptChatgpt"),
   promptCanva: document.getElementById("promptCanva"),
   promptGemini: document.getElementById("promptGemini"),
+  promptGrok: document.getElementById("promptGrok"),
   copyChatgptBtn: document.getElementById("copyChatgptBtn"),
   copyCanvaBtn: document.getElementById("copyCanvaBtn"),
   copyGeminiBtn: document.getElementById("copyGeminiBtn"),
+  copyGrokBtn: document.getElementById("copyGrokBtn"),
   imageStatus: document.getElementById("imageStatus"),
-  generatedImage: document.getElementById("generatedImage"),
 };
 
 let latestRevisedPlain = "";
 
 renderDailyQuote();
-bootstrapApiBaseUrl();
 
 el.proofreadBtn.addEventListener("click", async () => {
   const original = el.draftInput.value.trim();
@@ -70,26 +54,10 @@ el.proofreadBtn.addEventListener("click", async () => {
     alert("교정할 원문을 입력해 주세요.");
     return;
   }
-
-  const model = el.model.value.trim() || "gpt-4.1-mini";
-
-  let revised;
-  let changeLog;
-  let opinion;
-
-  try {
-    const ai = await runAiProofread({ original, model, styleGuide });
-    revised = ai.revisedText;
-    changeLog = ai.changeLog;
-    opinion = ai.editorOpinion;
-  } catch (error) {
-    console.error(error);
-    alert(`AI 교정에 실패했습니다. (${error.message}) 로컬 교정으로 진행합니다.`);
-    const local = runLocalProofread(original);
-    revised = local.revisedText;
-    changeLog = local.changeLog;
-    opinion = buildEditorOpinionLocal(revised, styleGuide);
-  }
+  const local = runLocalProofread(original);
+  const revised = local.revisedText;
+  const changeLog = local.changeLog;
+  const opinion = buildEditorOpinionLocal(revised, styleGuide);
 
   latestRevisedPlain = revised;
   const marked = markChangesAsBold(original, revised);
@@ -118,43 +86,14 @@ el.makePromptsBtn.addEventListener("click", () => {
   el.promptChatgpt.value = prompts.chatgpt;
   el.promptCanva.value = prompts.canva;
   el.promptGemini.value = prompts.gemini;
+  el.promptGrok.value = prompts.grok;
   el.imageStatus.textContent = "서비스별 이미지 프롬프트를 생성했습니다.";
-});
-
-el.generateImageBtn.addEventListener("click", async () => {
-  const original = el.draftInput.value.trim();
-  if (!original) {
-    alert("먼저 원문을 입력해 주세요.");
-    return;
-  }
-
-  if (!el.promptChatgpt.value.trim()) {
-    const prompts = buildImagePrompts(original);
-    el.promptChatgpt.value = prompts.chatgpt;
-    el.promptCanva.value = prompts.canva;
-    el.promptGemini.value = prompts.gemini;
-  }
-
-  try {
-    el.imageStatus.textContent = "이미지 생성 중입니다...";
-    const imageUrl = await generateOpenAiImage({
-      model: el.imageModel.value.trim() || "gpt-image-1",
-      size: el.imageSize.value.trim() || "1024x1024",
-      prompt: el.promptChatgpt.value,
-    });
-
-    el.generatedImage.src = imageUrl;
-    el.generatedImage.style.display = "block";
-    el.imageStatus.textContent = "ChatGPT 이미지 생성이 완료되었습니다.";
-  } catch (error) {
-    console.error(error);
-    el.imageStatus.textContent = `이미지 생성 실패: ${error.message}`;
-  }
 });
 
 el.copyChatgptBtn.addEventListener("click", () => copyPrompt(el.promptChatgpt.value));
 el.copyCanvaBtn.addEventListener("click", () => copyPrompt(el.promptCanva.value));
 el.copyGeminiBtn.addEventListener("click", () => copyPrompt(el.promptGemini.value));
+el.copyGrokBtn.addEventListener("click", () => copyPrompt(el.promptGrok.value));
 
 function renderDailyQuote() {
   const today = new Date();
@@ -197,90 +136,6 @@ function runLocalProofread(original) {
   };
 }
 
-async function runAiProofread({ original, model, styleGuide }) {
-  const prompt = [
-    "너는 한국어 문장 교정 편집팀의 편집장이다.",
-    "다음 4명이 각 전문분야 관점에서 충분히 논쟁한 뒤 합의한 결과를 작성해라:",
-    "1) 출판사 편집자",
-    "2) 베스트셀러 작가",
-    "3) 에세이 작가",
-    "4) 출판사 대표",
-    "논쟁은 핵심 쟁점별로 치열하게 진행하고, 최종적으로 합의안을 도출한다.",
-    "요구사항:",
-    "- 기본 원칙은 원문 최소 수정",
-    "- 흐름이 깨지거나 문맥 이해가 어려운 구간만 과감하게 재작성",
-    "- 오타, 띄어쓰기, 문법 교정",
-    "- 어색한 표현을 흐름 중심으로 개선",
-    "- 문체는 사용자가 제공한 출간본 PDF의 문체를 가장 우선으로 모사",
-    "- 따뜻하고 독자 친화적인 톤으로 조정",
-    "- 아래 Brunch Insight Prompt 체크리스트를 기준으로 글의 결을 검토하고 필요한 최소 수정 반영",
-    brunchInsightGuide,
-    "결과는 반드시 JSON으로만 응답",
-    "JSON 스키마:",
-    '{"revisedText":"...","changeLog":[{"change":"...","reason":"..."}],"editorOpinion":{"debate":[{"role":"출판사 편집자|베스트셀러 작가|에세이 작가|출판사 대표","stance":"..."}],"consensus":"...","actionItems":["..."]}}',
-    `참고 문체 가이드: ${JSON.stringify(styleGuide)}`,
-    `원문:\n${original}`,
-  ].join("\n");
-
-  const response = await apiFetch("/api/proofread", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt }),
-  });
-
-  if (!response.ok) {
-    const detail = await safeErrorDetail(response);
-    throw new Error(`AI 교정 API 실패 (${response.status}) ${detail}`);
-  }
-
-  const data = await response.json();
-  const text = extractResponseText(data);
-  const parsed = parseJsonSafely(text);
-
-  if (!parsed?.revisedText) {
-    throw new Error("AI 응답 JSON 파싱 실패");
-  }
-
-  return {
-    revisedText: parsed.revisedText,
-    changeLog: Array.isArray(parsed.changeLog) ? parsed.changeLog : [],
-    editorOpinion: parsed.editorOpinion || buildEditorOpinionLocal(parsed.revisedText, styleGuide),
-  };
-}
-
-function parseJsonSafely(text) {
-  try {
-    return JSON.parse(text);
-  } catch (_) {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    try {
-      return JSON.parse(match[0]);
-    } catch (_) {
-      return null;
-    }
-  }
-}
-
-function extractResponseText(data) {
-  if (typeof data?.output_text === "string" && data.output_text.trim()) {
-    return data.output_text;
-  }
-
-  const output = Array.isArray(data?.output) ? data.output : [];
-  const chunks = [];
-
-  output.forEach((item) => {
-    const content = Array.isArray(item?.content) ? item.content : [];
-    content.forEach((part) => {
-      if (part?.type === "output_text" && typeof part?.text === "string") {
-        chunks.push(part.text);
-      }
-    });
-  });
-
-  return chunks.join("\n");
-}
 
 function markChangesAsBold(original, revised) {
   const a = tokenize(original);
@@ -441,6 +296,13 @@ function buildImagePrompts(text) {
       `반영 요소: ${summary.keywords.join(", ")}.`,
       "사진과 일러스트 중간 질감, 부드러운 조명, 과장되지 않은 현실감, 텍스트 삽입 금지.",
     ].join(" "),
+    grok: [
+      "에세이 커버 이미지를 위한 프롬프트.",
+      `핵심 주제: ${summary.theme}.`,
+      `감정 톤: ${summary.mood}.`,
+      `키워드: ${summary.keywords.join(", ")}.`,
+      "밝고 세련된 미니멀 무드, 여백을 살린 구도, 인물 중심 서정 이미지, 텍스트 없음.",
+    ].join(" "),
   };
 }
 
@@ -475,58 +337,10 @@ function inferTheme(text, keywords) {
   return "상처 이후 일상을 회복해 가는 개인적 서사";
 }
 
-async function generateOpenAiImage({ model, size, prompt }) {
-  const response = await apiFetch("/api/image", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt, size }),
-  });
-
-  if (!response.ok) {
-    const detail = await safeErrorDetail(response);
-    throw new Error(`이미지 API 실패 (${response.status}) ${detail}`);
-  }
-  const data = await response.json();
-  const item = Array.isArray(data?.data) ? data.data[0] : null;
-
-  if (item?.b64_json) return `data:image/png;base64,${item.b64_json}`;
-  if (item?.url) return item.url;
-  throw new Error("No image payload");
-}
-
 async function copyPrompt(text) {
   if (!text.trim()) {
     alert("복사할 프롬프트가 없습니다.");
     return;
   }
   await navigator.clipboard.writeText(text);
-}
-
-function bootstrapApiBaseUrl() {
-  const saved = localStorage.getItem("api_base_url") || "";
-  if (el.apiBaseUrl) el.apiBaseUrl.value = saved;
-  el.apiBaseUrl?.addEventListener("change", () => {
-    localStorage.setItem("api_base_url", el.apiBaseUrl.value.trim());
-  });
-}
-
-function getApiBaseUrl() {
-  const raw = el.apiBaseUrl?.value?.trim() || localStorage.getItem("api_base_url") || "";
-  if (!raw) return "";
-  return raw.replace(/\/+$/, "");
-}
-
-function apiFetch(path, options) {
-  const base = getApiBaseUrl();
-  const url = `${base}${path}`;
-  return fetch(url, options);
-}
-
-async function safeErrorDetail(response) {
-  try {
-    const data = await response.json();
-    return data?.error?.message || data?.error || "";
-  } catch (_) {
-    return "";
-  }
 }
