@@ -37,6 +37,7 @@ const quotes = [
 const el = {
   dailyQuote: document.getElementById("dailyQuote"),
   draftInput: document.getElementById("draftInput"),
+  apiBaseUrl: document.getElementById("apiBaseUrl"),
   model: document.getElementById("model"),
   proofreadBtn: document.getElementById("proofreadBtn"),
   copyRevisedBtn: document.getElementById("copyRevisedBtn"),
@@ -61,6 +62,7 @@ const el = {
 let latestRevisedPlain = "";
 
 renderDailyQuote();
+bootstrapApiBaseUrl();
 
 el.proofreadBtn.addEventListener("click", async () => {
   const original = el.draftInput.value.trim();
@@ -82,7 +84,7 @@ el.proofreadBtn.addEventListener("click", async () => {
     opinion = ai.editorOpinion;
   } catch (error) {
     console.error(error);
-    alert("AI 교정에 실패했습니다. 로컬 교정으로 진행합니다.");
+    alert(`AI 교정에 실패했습니다. (${error.message}) 로컬 교정으로 진행합니다.`);
     const local = runLocalProofread(original);
     revised = local.revisedText;
     changeLog = local.changeLog;
@@ -146,7 +148,7 @@ el.generateImageBtn.addEventListener("click", async () => {
     el.imageStatus.textContent = "ChatGPT 이미지 생성이 완료되었습니다.";
   } catch (error) {
     console.error(error);
-    el.imageStatus.textContent = "이미지 생성에 실패했습니다. 서버 키/모델/크기를 확인해 주세요.";
+    el.imageStatus.textContent = `이미지 생성 실패: ${error.message}`;
   }
 });
 
@@ -220,14 +222,15 @@ async function runAiProofread({ original, model, styleGuide }) {
     `원문:\n${original}`,
   ].join("\n");
 
-  const response = await fetch("/api/proofread", {
+  const response = await apiFetch("/api/proofread", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, prompt }),
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    const detail = await safeErrorDetail(response);
+    throw new Error(`AI 교정 API 실패 (${response.status}) ${detail}`);
   }
 
   const data = await response.json();
@@ -473,13 +476,16 @@ function inferTheme(text, keywords) {
 }
 
 async function generateOpenAiImage({ model, size, prompt }) {
-  const response = await fetch("/api/image", {
+  const response = await apiFetch("/api/image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, prompt, size }),
   });
 
-  if (!response.ok) throw new Error(`Image API error: ${response.status}`);
+  if (!response.ok) {
+    const detail = await safeErrorDetail(response);
+    throw new Error(`이미지 API 실패 (${response.status}) ${detail}`);
+  }
   const data = await response.json();
   const item = Array.isArray(data?.data) ? data.data[0] : null;
 
@@ -494,4 +500,33 @@ async function copyPrompt(text) {
     return;
   }
   await navigator.clipboard.writeText(text);
+}
+
+function bootstrapApiBaseUrl() {
+  const saved = localStorage.getItem("api_base_url") || "";
+  if (el.apiBaseUrl) el.apiBaseUrl.value = saved;
+  el.apiBaseUrl?.addEventListener("change", () => {
+    localStorage.setItem("api_base_url", el.apiBaseUrl.value.trim());
+  });
+}
+
+function getApiBaseUrl() {
+  const raw = el.apiBaseUrl?.value?.trim() || localStorage.getItem("api_base_url") || "";
+  if (!raw) return "";
+  return raw.replace(/\/+$/, "");
+}
+
+function apiFetch(path, options) {
+  const base = getApiBaseUrl();
+  const url = `${base}${path}`;
+  return fetch(url, options);
+}
+
+async function safeErrorDetail(response) {
+  try {
+    const data = await response.json();
+    return data?.error?.message || data?.error || "";
+  } catch (_) {
+    return "";
+  }
 }

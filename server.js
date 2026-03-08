@@ -1,12 +1,19 @@
 const express = require("express");
 const path = require("path");
+const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 
 app.use(express.json({ limit: "2mb" }));
+app.use(cors({ origin: CORS_ORIGIN === "*" ? true : CORS_ORIGIN.split(",").map((s) => s.trim()) }));
 app.use(express.static(path.join(__dirname)));
+
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, hasKey: Boolean(OPENAI_API_KEY) });
+});
 
 app.post("/api/proofread", async (req, res) => {
   if (!OPENAI_API_KEY) {

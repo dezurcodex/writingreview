@@ -33,6 +33,7 @@ npm install
 OPENAI_API_KEY=여기에_키 npm start
 ```
 3. 브라우저에서 `http://localhost:3000` 접속
+4. 프론트/백엔드 분리 시 `API 서버 URL` 입력란에 서버 주소 입력
 
 ## GitHub 시크릿 관련 중요 사항
 - GitHub 저장소 시크릿은 **GitHub Actions 실행 시점**에만 사용 가능합니다.
@@ -42,9 +43,15 @@ OPENAI_API_KEY=여기에_키 npm start
 ## 권장 배포 방식
 1. 이 저장소를 Render/Railway 같은 Node 런타임 서비스에 연결
 2. 환경변수 `OPENAI_API_KEY` 등록
-3. Start Command: `npm start`
-4. 배포 URL로 접속
+3. (선택) `CORS_ORIGIN`에 프론트 도메인 설정
+4. Start Command: `npm start`
+5. 배포 URL로 접속
 
 ## 제한 사항
 1. 서버 환경변수 `OPENAI_API_KEY`가 없으면 AI 교정/이미지 생성은 실패하고 로컬 교정만 동작합니다.
 2. Canva/Gemini는 API 직접 연동이 아니라 프롬프트 제안 + 서비스 이동 방식입니다.
+
+## 장애 대응
+1. AI 교정/이미지가 실패하면 먼저 `https://서버도메인/api/health` 호출 결과를 확인합니다.
+2. `API 서버 URL`이 비어 있으면 현재 도메인(`/api/...`)으로 호출합니다.
+3. 프론트가 GitHub Pages이고 API가 다른 도메인이면 `CORS_ORIGIN` 설정이 필요합니다.

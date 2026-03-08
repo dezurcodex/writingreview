@@ -92,3 +92,16 @@
 ### Changed
 - AI 교정 프롬프트에 `Brunch Insight Writing Prompt` 체크리스트를 통합
 - 교정 시 감정→개념→통찰→마무리 구조, 모드(A~D), 톤앤매너(짧고 따뜻한 문장/여운 중심) 기준을 함께 검토하도록 강화
+
+## [v1.4.3] - 2026-03-08 15:07:28 KST
+### Fixed
+- 프런트와 API 서버가 분리된 배포에서 AI 교정/이미지 호출 실패하던 문제 대응
+- `API 서버 URL` 입력값(localStorage 저장) 기반으로 `/api/proofread`, `/api/image` 호출 지원
+- API 실패 시 상태코드와 상세 에러 메시지를 화면에 표시
+
+### Added
+- `server.js`에 CORS 설정(`CORS_ORIGIN`) 및 `/api/health` 헬스체크 엔드포인트 추가
+- `package.json`에 `cors` 의존성 추가
+
+### Docs
+- README에 분리 배포 설정 및 장애 대응 절차 추가

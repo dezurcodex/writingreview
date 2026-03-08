@@ -24,6 +24,9 @@
           <h3>AI 고급 교정</h3>
           <p class="hint">서버에 저장된 OpenAI 키를 사용합니다. 연결 실패 시 로컬 교정으로 동작합니다.</p>
           <div class="row">
+            <input id="apiBaseUrl" type="text" placeholder="API 서버 URL (예: https://your-app.onrender.com)" />
+          </div>
+          <div class="row">
             <input id="model" type="text" value="gpt-4.1-mini" placeholder="모델명" />
             <button id="proofreadBtn">교정 실행</button>
           </div>
