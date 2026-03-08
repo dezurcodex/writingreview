@@ -8,30 +8,39 @@
   </head>
   <body>
     <header class="hero">
-      <h1>브런치 글 수정</h1>
-      <p>오타/띄어쓰기/문법 교정 + 문장 흐름 개선 + 따뜻한 톤 편집</p>
+      <div class="hero-shell">
+        <h1>브런치 글 수정</h1>
+        <p class="hero-subtitle">오타/띄어쓰기/문법 교정 + 문장 흐름 개선 + 따뜻한 톤 편집</p>
+        <blockquote id="dailyQuote" class="quote"></blockquote>
+      </div>
     </header>
 
     <main class="grid">
-      <section class="card">
-        <h2>1) 교정 대상 원문</h2>
-        <p class="hint">참고 문체(제공한 샘플)는 내부 편집 기준으로만 반영됩니다.</p>
+      <section class="card span-2">
+        <h2><span class="badge">1</span>교정 대상 원문</h2>
+        <p class="hint">참고 문체(제공한 샘플)는 내부 편집 기준으로 반영됩니다.</p>
         <textarea id="draftInput" rows="14" placeholder="교정할 글을 입력하세요."></textarea>
         <div class="api-box">
-          <h3>선택: AI 고급 교정</h3>
+          <h3>AI 고급 교정</h3>
           <p class="hint">서버에 저장된 OpenAI 키를 사용합니다. 연결 실패 시 로컬 교정으로 동작합니다.</p>
-          <input id="model" type="text" value="gpt-4.1-mini" placeholder="모델명" />
-          <button id="proofreadBtn">교정 실행</button>
+          <div class="row">
+            <input id="model" type="text" value="gpt-4.1-mini" placeholder="모델명" />
+            <button id="proofreadBtn">교정 실행</button>
+          </div>
         </div>
       </section>
 
-      <section class="card">
-        <h2>2) 교정 결과 (변경사항 Bold)</h2>
+      <section class="card span-2">
+        <h2><span class="badge">2</span>교정 결과 (변경사항 Bold)</h2>
+        <div class="toolbar">
+          <button id="copyRevisedBtn">교정결과 전체 복사</button>
+          <span id="copyStatus" class="hint"></span>
+        </div>
         <div id="revisedView" class="result prose"></div>
       </section>
 
       <section class="card">
-        <h2>3) 변경 이력 및 설명</h2>
+        <h2><span class="badge">3</span>변경 이력 및 설명</h2>
         <table>
           <thead>
             <tr>
@@ -45,18 +54,19 @@
       </section>
 
       <section class="card">
-        <h2>4) 편집자 평가 의견</h2>
-        <div id="editorOpinion" class="result"></div>
+        <h2><span class="badge">4</span>편집자 합의 의견</h2>
+        <p class="hint">출판사 편집자, 베스트셀러 작가, 에세이 작가, 출판사 대표가 치열하게 토론한 뒤 합의한 내용</p>
+        <div id="editorOpinion" class="result debate"></div>
       </section>
 
-      <section class="card">
-        <h2>5) 글 기반 이미지 제안/생성</h2>
+      <section class="card span-2">
+        <h2><span class="badge">5</span>글 기반 이미지 제안/생성</h2>
         <p class="hint">원문을 분석해 서비스별 프롬프트를 만들고, 서버 키가 설정되어 있으면 이미지를 바로 생성합니다.</p>
         <div class="row">
           <button id="makePromptsBtn">이미지 프롬프트 제안</button>
           <button id="generateImageBtn">ChatGPT 이미지 생성</button>
         </div>
-        <div class="api-box">
+        <div class="row">
           <input id="imageModel" type="text" value="gpt-image-1" placeholder="이미지 모델명" />
           <input id="imageSize" type="text" value="1024x1024" placeholder="이미지 크기 (예: 1024x1024)" />
         </div>
@@ -89,7 +99,7 @@
     </main>
 
     <footer>
-      <small>브런치 글 수정 v1 - HTML5 + JavaScript</small>
+      <small>브런치 글 수정 v2 - Trendy Minimal UI</small>
     </footer>
     <script type="module" src="./app.js"></script>
   </body>
