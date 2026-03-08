@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warm Editor - 글 교정 웹서비스</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>Warm Editor</h1>
+      <p>오타/띄어쓰기/문법 교정 + 문장 흐름 개선 + 따뜻한 톤 편집</p>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>1) 작가 스타일 분석</h2>
+        <p class="hint">첨부 PDF 또는 텍스트로 문체 프로필을 만듭니다.</p>
+        <div class="row">
+          <input id="pdfInput" type="file" accept=".pdf" />
+          <button id="analyzePdfBtn">PDF 분석</button>
+        </div>
+        <textarea id="styleText" rows="5" placeholder="또는 스타일 분석용 텍스트를 붙여 넣으세요."></textarea>
+        <button id="analyzeTextBtn">텍스트 분석</button>
+        <pre id="styleResult" class="result"></pre>
+      </section>
+
+      <section class="card">
+        <h2>2) 교정 대상 원문</h2>
+        <textarea id="draftInput" rows="14" placeholder="교정할 글을 입력하세요."></textarea>
+        <div class="api-box">
+          <h3>선택: AI 고급 교정</h3>
+          <p class="hint">API 키가 없으면 로컬 교정 규칙으로 동작합니다.</p>
+          <input id="apiKey" type="password" placeholder="OpenAI API Key (선택)" />
+          <input id="model" type="text" value="gpt-4.1-mini" placeholder="모델명" />
+          <button id="proofreadBtn">교정 실행</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3) 교정 결과 (변경사항 Bold)</h2>
+        <div id="revisedView" class="result prose"></div>
+      </section>
+
+      <section class="card">
+        <h2>4) 변경 이력 및 설명</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>변경 내용</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody id="changeLogBody"></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>5) 편집자 평가 의견</h2>
+        <div id="editorOpinion" class="result"></div>
+      </section>
+    </main>
+
+    <footer>
+      <small>Warm Editor v1 - HTML5 + JavaScript</small>
+    </footer>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

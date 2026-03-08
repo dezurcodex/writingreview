@@ -1,0 +1,133 @@
+:root {
+  --bg: #f8f6f2;
+  --paper: #fffdf8;
+  --ink: #2e2a25;
+  --muted: #6e655a;
+  --line: #ded5c8;
+  --accent: #b45b3e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Pretendard", "Noto Sans KR", sans-serif;
+  background: radial-gradient(circle at top right, #f3e7d6 0%, var(--bg) 45%);
+  color: var(--ink);
+}
+
+.hero {
+  padding: 28px 20px 14px;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.hero p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.grid {
+  width: min(1100px, 92vw);
+  margin: 0 auto 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 1.06rem;
+}
+
+h3 {
+  margin: 4px 0 10px;
+  font-size: 0.95rem;
+}
+
+.hint {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+input,
+textarea,
+button {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.95rem;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  background: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+.api-box {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.result {
+  min-height: 90px;
+  white-space: pre-wrap;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.prose strong {
+  color: var(--accent);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 8px 6px;
+  vertical-align: top;
+  font-size: 0.9rem;
+}
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  margin: 12px 0 24px;
+}
