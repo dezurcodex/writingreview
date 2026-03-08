@@ -70,6 +70,12 @@ h3 {
   margin-bottom: 8px;
 }
 
+.prompt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
 input,
 textarea,
 button {
@@ -90,6 +96,22 @@ button {
 }
 
 button:hover {
+  border-color: var(--accent);
+}
+
+.link-btn {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--ink);
+  text-decoration: none;
+  background: #fff;
+}
+
+.link-btn:hover {
   border-color: var(--accent);
 }
 
@@ -130,4 +152,12 @@ footer {
   text-align: center;
   color: var(--muted);
   margin: 12px 0 24px;
+}
+
+.generated-image {
+  display: none;
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
 }

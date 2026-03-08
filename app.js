@@ -1,18 +1,13 @@
-import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.min.mjs";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.mjs";
-
-const state = {
-  styleProfile: null,
+const styleGuide = {
+  summary: "긴 호흡과 감정선의 균형, 따뜻한 위로형 문체",
+  priorities: [
+    "문장 의미 손상 없이 오타/띄어쓰기/문법 교정",
+    "문단 흐름을 해치지 않는 자연스러운 연결",
+    "독자가 편안하게 읽는 따뜻한 온도 유지",
+  ],
 };
 
 const el = {
-  pdfInput: document.getElementById("pdfInput"),
-  analyzePdfBtn: document.getElementById("analyzePdfBtn"),
-  styleText: document.getElementById("styleText"),
-  analyzeTextBtn: document.getElementById("analyzeTextBtn"),
-  styleResult: document.getElementById("styleResult"),
   draftInput: document.getElementById("draftInput"),
   apiKey: document.getElementById("apiKey"),
   model: document.getElementById("model"),
@@ -20,35 +15,19 @@ const el = {
   revisedView: document.getElementById("revisedView"),
   changeLogBody: document.getElementById("changeLogBody"),
   editorOpinion: document.getElementById("editorOpinion"),
+  makePromptsBtn: document.getElementById("makePromptsBtn"),
+  generateImageBtn: document.getElementById("generateImageBtn"),
+  imageModel: document.getElementById("imageModel"),
+  imageSize: document.getElementById("imageSize"),
+  promptChatgpt: document.getElementById("promptChatgpt"),
+  promptCanva: document.getElementById("promptCanva"),
+  promptGemini: document.getElementById("promptGemini"),
+  copyChatgptBtn: document.getElementById("copyChatgptBtn"),
+  copyCanvaBtn: document.getElementById("copyCanvaBtn"),
+  copyGeminiBtn: document.getElementById("copyGeminiBtn"),
+  imageStatus: document.getElementById("imageStatus"),
+  generatedImage: document.getElementById("generatedImage"),
 };
-
-el.analyzePdfBtn.addEventListener("click", async () => {
-  const file = el.pdfInput.files?.[0];
-  if (!file) {
-    alert("PDF 파일을 먼저 선택해 주세요.");
-    return;
-  }
-
-  try {
-    const text = await extractTextFromPdf(file);
-    el.styleText.value = text.slice(0, 15000);
-    state.styleProfile = analyzeStyle(text);
-    renderStyle(state.styleProfile);
-  } catch (error) {
-    console.error(error);
-    alert("PDF 분석에 실패했습니다. 텍스트를 직접 붙여 넣어 분석해 주세요.");
-  }
-});
-
-el.analyzeTextBtn.addEventListener("click", () => {
-  const text = el.styleText.value.trim();
-  if (!text) {
-    alert("분석할 텍스트를 입력해 주세요.");
-    return;
-  }
-  state.styleProfile = analyzeStyle(text);
-  renderStyle(state.styleProfile);
-});
 
 el.proofreadBtn.addEventListener("click", async () => {
   const original = el.draftInput.value.trim();
@@ -66,7 +45,7 @@ el.proofreadBtn.addEventListener("click", async () => {
 
   if (apiKey) {
     try {
-      const ai = await runAiProofread({ original, apiKey, model, styleProfile: state.styleProfile });
+      const ai = await runAiProofread({ original, apiKey, model, styleGuide });
       revised = ai.revisedText;
       changeLog = ai.changeLog;
       opinion = ai.editorOpinion;
@@ -76,13 +55,13 @@ el.proofreadBtn.addEventListener("click", async () => {
       const local = runLocalProofread(original);
       revised = local.revisedText;
       changeLog = local.changeLog;
-      opinion = buildEditorOpinion(revised, state.styleProfile, true);
+      opinion = buildEditorOpinion(revised, styleGuide, true);
     }
   } else {
     const local = runLocalProofread(original);
     revised = local.revisedText;
     changeLog = local.changeLog;
-    opinion = buildEditorOpinion(revised, state.styleProfile, true);
+    opinion = buildEditorOpinion(revised, styleGuide, true);
   }
 
   const marked = markChangesAsBold(original, revised);
@@ -91,82 +70,61 @@ el.proofreadBtn.addEventListener("click", async () => {
   el.editorOpinion.textContent = opinion;
 });
 
-async function extractTextFromPdf(file) {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
-  const pages = [];
-
-  for (let i = 1; i <= pdf.numPages; i += 1) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const text = content.items.map((item) => item.str).join(" ");
-    pages.push(text);
+el.makePromptsBtn.addEventListener("click", () => {
+  const original = el.draftInput.value.trim();
+  if (!original) {
+    alert("먼저 원문을 입력해 주세요.");
+    return;
   }
 
-  return pages.join("\n");
-}
+  const prompts = buildImagePrompts(original);
+  el.promptChatgpt.value = prompts.chatgpt;
+  el.promptCanva.value = prompts.canva;
+  el.promptGemini.value = prompts.gemini;
+  el.imageStatus.textContent = "서비스별 이미지 프롬프트를 생성했습니다.";
+});
 
-function analyzeStyle(text) {
-  const cleaned = text.replace(/\s+/g, " ").trim();
-  const sentences = cleaned
-    .split(/[.!?。！？\n]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+el.generateImageBtn.addEventListener("click", async () => {
+  const apiKey = el.apiKey.value.trim();
+  if (!apiKey) {
+    alert("ChatGPT 이미지 생성을 위해 OpenAI API Key를 입력해 주세요.");
+    return;
+  }
 
-  const sentenceLengths = sentences.map((s) => {
-    const byWords = s.split(/\s+/).filter(Boolean).length;
-    return byWords > 1 ? byWords : s.length;
-  });
+  const original = el.draftInput.value.trim();
+  if (!original) {
+    alert("먼저 원문을 입력해 주세요.");
+    return;
+  }
 
-  const avgSentenceLength = sentenceLengths.length
-    ? sentenceLengths.reduce((a, b) => a + b, 0) / sentenceLengths.length
-    : 0;
+  if (!el.promptChatgpt.value.trim()) {
+    const prompts = buildImagePrompts(original);
+    el.promptChatgpt.value = prompts.chatgpt;
+    el.promptCanva.value = prompts.canva;
+    el.promptGemini.value = prompts.gemini;
+  }
 
-  const warmWords = ["따뜻", "위로", "마음", "다정", "고마", "사랑", "괜찮", "응원", "천천히", "함께"];
-  const firstPersonWords = ["나", "내", "나는", "내가"];
+  try {
+    el.imageStatus.textContent = "이미지 생성 중입니다...";
+    const imageUrl = await generateOpenAiImage({
+      apiKey,
+      model: el.imageModel.value.trim() || "gpt-image-1",
+      size: el.imageSize.value.trim() || "1024x1024",
+      prompt: el.promptChatgpt.value,
+    });
 
-  const warmCount = countKeywordHits(cleaned, warmWords);
-  const firstPersonCount = countKeywordHits(cleaned, firstPersonWords);
+    el.generatedImage.src = imageUrl;
+    el.generatedImage.style.display = "block";
+    el.imageStatus.textContent = "ChatGPT 이미지 생성이 완료되었습니다.";
+  } catch (error) {
+    console.error(error);
+    el.imageStatus.textContent = "이미지 생성에 실패했습니다. API 키/모델/크기를 확인해 주세요.";
+  }
+});
 
-  const profile = {
-    sentenceCount: sentences.length,
-    avgSentenceLength: Number(avgSentenceLength.toFixed(1)),
-    punctuationRate: {
-      comma: ((cleaned.match(/,/g) || []).length / Math.max(sentences.length, 1)).toFixed(2),
-      ellipsis: ((cleaned.match(/\.\.\./g) || []).length / Math.max(sentences.length, 1)).toFixed(2),
-    },
-    warmToneScore: Number((warmCount / Math.max(sentences.length, 1)).toFixed(2)),
-    firstPersonScore: Number((firstPersonCount / Math.max(sentences.length, 1)).toFixed(2)),
-    summary: inferStyleSummary(avgSentenceLength, warmCount, firstPersonCount),
-  };
-
-  return profile;
-}
-
-function inferStyleSummary(avgSentenceLength, warmCount, firstPersonCount) {
-  const flow = avgSentenceLength > 14 ? "긴 호흡 중심" : "짧은 호흡 중심";
-  const tone = warmCount > firstPersonCount ? "정서/위로형" : "경험/기록형";
-  return `${flow}, ${tone} 문체`;
-}
-
-function countKeywordHits(text, keywords) {
-  return keywords.reduce((acc, word) => {
-    const regex = new RegExp(word, "g");
-    return acc + (text.match(regex) || []).length;
-  }, 0);
-}
-
-function renderStyle(profile) {
-  el.styleResult.textContent = [
-    `문장 수: ${profile.sentenceCount}`,
-    `평균 문장 길이: ${profile.avgSentenceLength}`,
-    `쉼표 사용률(문장당): ${profile.punctuationRate.comma}`,
-    `말줄임표 사용률(문장당): ${profile.punctuationRate.ellipsis}`,
-    `따뜻한 톤 점수: ${profile.warmToneScore}`,
-    `1인칭 서술 점수: ${profile.firstPersonScore}`,
-    `요약: ${profile.summary}`,
-  ].join("\n");
-}
+el.copyChatgptBtn.addEventListener("click", () => copyPrompt(el.promptChatgpt.value));
+el.copyCanvaBtn.addEventListener("click", () => copyPrompt(el.promptCanva.value));
+el.copyGeminiBtn.addEventListener("click", () => copyPrompt(el.promptGemini.value));
 
 function runLocalProofread(original) {
   const changes = [];
@@ -206,7 +164,7 @@ function runLocalProofread(original) {
   };
 }
 
-async function runAiProofread({ original, apiKey, model, styleProfile }) {
+async function runAiProofread({ original, apiKey, model, styleGuide }) {
   const prompt = [
     "너는 한국어 문장 교정 편집자다.",
     "요구사항:",
@@ -216,7 +174,7 @@ async function runAiProofread({ original, apiKey, model, styleProfile }) {
     "4) 결과는 JSON으로만 응답",
     "JSON 스키마:",
     '{"revisedText":"...", "changeLog":[{"change":"...","reason":"..."}], "editorOpinion":"..."}',
-    styleProfile ? `참고 문체 프로필: ${JSON.stringify(styleProfile)}` : "문체 프로필 없음",
+    `참고 문체 가이드: ${JSON.stringify(styleGuide)}`,
     `원문:\n${original}`,
   ].join("\n");
 
@@ -387,10 +345,130 @@ function renderChangeLog(changeLog) {
   });
 }
 
-function buildEditorOpinion(revisedText, styleProfile, localMode = false) {
+function buildEditorOpinion(revisedText, styleGuide, localMode = false) {
   const len = revisedText.length;
   const opening = localMode ? "로컬 교정 기준" : "AI 교정 기준";
-  const styleHint = styleProfile ? `참고 문체: ${styleProfile.summary}` : "문체 기준 미적용";
+  const styleHint = styleGuide ? `참고 문체: ${styleGuide.summary}` : "문체 기준 미적용";
 
   return `${opening}에서 문장 안정감과 가독성이 개선되었습니다. ${styleHint}. 전체 분량은 ${len}자이며, 감정선이 급격히 흔들리는 부분은 줄이고 독자가 따라가기 쉬운 온도로 정돈했습니다.`;
+}
+
+function buildImagePrompts(text) {
+  const summary = summarizeForImage(text);
+
+  return {
+    chatgpt: [
+      "Create a warm, emotionally gentle editorial illustration based on this Korean essay.",
+      `Core theme: ${summary.theme}`,
+      `Mood: ${summary.mood}`,
+      `Key elements: ${summary.keywords.join(", ")}`,
+      "Style: cinematic natural light, soft grain, human-centered storytelling, no text overlay.",
+      "Composition: one clear subject, balanced negative space for blog cover use.",
+      "Aspect ratio: 1:1, high detail.",
+    ].join(" "),
+    canva: [
+      "브런치 에세이 커버 이미지.",
+      `주제: ${summary.theme}.`,
+      `분위기: ${summary.mood}.`,
+      `핵심 키워드: ${summary.keywords.join(", ")}.`,
+      "따뜻한 색감, 감정이 담긴 인물 중심, 여백 있는 구도, 텍스트 없이 제작.",
+    ].join(" "),
+    gemini: [
+      "한국어 에세이용 감성 커버 이미지 생성.",
+      `주제는 '${summary.theme}'이며 톤은 '${summary.mood}'.`,
+      `반영 요소: ${summary.keywords.join(", ")}.`,
+      "사진과 일러스트 중간 질감, 부드러운 조명, 과장되지 않은 현실감, 텍스트 삽입 금지.",
+    ].join(" "),
+  };
+}
+
+function summarizeForImage(text) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  const keywords = pickKeywords(clean);
+  const mood = inferMood(clean);
+  const theme = inferTheme(clean, keywords);
+
+  return {
+    keywords,
+    mood,
+    theme,
+  };
+}
+
+function pickKeywords(text) {
+  const candidates = [
+    "이혼",
+    "기억",
+    "가족",
+    "위로",
+    "회복",
+    "관계",
+    "일상",
+    "혼자",
+    "다시 시작",
+    "마음",
+    "저녁",
+    "산책",
+    "집",
+  ];
+
+  const hits = candidates.filter((word) => text.includes(word));
+  if (hits.length >= 4) return hits.slice(0, 4);
+  return [...hits, "따뜻한 빛", "고요한 장면", "감정의 여운"].slice(0, 4);
+}
+
+function inferMood(text) {
+  const warm = ["위로", "따뜻", "고맙", "다정", "괜찮", "회복"];
+  const heavy = ["불안", "슬픔", "외로", "이혼", "상처"];
+  const warmCount = warm.reduce((a, k) => a + ((text.match(new RegExp(k, "g")) || []).length), 0);
+  const heavyCount = heavy.reduce((a, k) => a + ((text.match(new RegExp(k, "g")) || []).length), 0);
+
+  if (warmCount >= heavyCount) return "잔잔하고 따뜻한 희망";
+  return "차분하지만 회복으로 향하는 정서";
+}
+
+function inferTheme(text, keywords) {
+  if (text.includes("이혼")) return "이혼 이후의 삶을 다시 정리해 가는 여정";
+  if (keywords.includes("가족")) return "가족과 관계의 결을 이해해 가는 기록";
+  return "상처 이후 일상을 회복해 가는 개인적 서사";
+}
+
+async function generateOpenAiImage({ apiKey, model, size, prompt }) {
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      prompt,
+      size,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Image API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const item = Array.isArray(data?.data) ? data.data[0] : null;
+
+  if (item?.b64_json) {
+    return `data:image/png;base64,${item.b64_json}`;
+  }
+
+  if (item?.url) {
+    return item.url;
+  }
+
+  throw new Error("No image payload");
+}
+
+async function copyPrompt(text) {
+  if (!text.trim()) {
+    alert("복사할 프롬프트가 없습니다.");
+    return;
+  }
+  await navigator.clipboard.writeText(text);
 }
