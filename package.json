@@ -1,0 +1,16 @@
+{
+  "name": "brunch-writing-review",
+  "version": "1.3.0",
+  "private": true,
+  "description": "브런치 글 수정 - OpenAI 프록시 서버 포함",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

@@ -9,7 +9,6 @@ const styleGuide = {
 
 const el = {
   draftInput: document.getElementById("draftInput"),
-  apiKey: document.getElementById("apiKey"),
   model: document.getElementById("model"),
   proofreadBtn: document.getElementById("proofreadBtn"),
   revisedView: document.getElementById("revisedView"),
@@ -36,28 +35,20 @@ el.proofreadBtn.addEventListener("click", async () => {
     return;
   }
 
-  const apiKey = el.apiKey.value.trim();
   const model = el.model.value.trim() || "gpt-4.1-mini";
 
   let revised;
   let changeLog;
   let opinion;
 
-  if (apiKey) {
-    try {
-      const ai = await runAiProofread({ original, apiKey, model, styleGuide });
-      revised = ai.revisedText;
-      changeLog = ai.changeLog;
-      opinion = ai.editorOpinion;
-    } catch (error) {
-      console.error(error);
-      alert("AI 교정에 실패했습니다. 로컬 교정으로 진행합니다.");
-      const local = runLocalProofread(original);
-      revised = local.revisedText;
-      changeLog = local.changeLog;
-      opinion = buildEditorOpinion(revised, styleGuide, true);
-    }
-  } else {
+  try {
+    const ai = await runAiProofread({ original, model, styleGuide });
+    revised = ai.revisedText;
+    changeLog = ai.changeLog;
+    opinion = ai.editorOpinion;
+  } catch (error) {
+    console.error(error);
+    alert("AI 교정에 실패했습니다. 로컬 교정으로 진행합니다.");
     const local = runLocalProofread(original);
     revised = local.revisedText;
     changeLog = local.changeLog;
@@ -85,12 +76,6 @@ el.makePromptsBtn.addEventListener("click", () => {
 });
 
 el.generateImageBtn.addEventListener("click", async () => {
-  const apiKey = el.apiKey.value.trim();
-  if (!apiKey) {
-    alert("ChatGPT 이미지 생성을 위해 OpenAI API Key를 입력해 주세요.");
-    return;
-  }
-
   const original = el.draftInput.value.trim();
   if (!original) {
     alert("먼저 원문을 입력해 주세요.");
@@ -107,7 +92,6 @@ el.generateImageBtn.addEventListener("click", async () => {
   try {
     el.imageStatus.textContent = "이미지 생성 중입니다...";
     const imageUrl = await generateOpenAiImage({
-      apiKey,
       model: el.imageModel.value.trim() || "gpt-image-1",
       size: el.imageSize.value.trim() || "1024x1024",
       prompt: el.promptChatgpt.value,
@@ -164,7 +148,7 @@ function runLocalProofread(original) {
   };
 }
 
-async function runAiProofread({ original, apiKey, model, styleGuide }) {
+async function runAiProofread({ original, model, styleGuide }) {
   const prompt = [
     "너는 한국어 문장 교정 편집자다.",
     "요구사항:",
@@ -178,16 +162,14 @@ async function runAiProofread({ original, apiKey, model, styleGuide }) {
     `원문:\n${original}`,
   ].join("\n");
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("/api/proofread", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model,
-      input: prompt,
-      temperature: 0.4,
+      prompt,
     }),
   });
 
@@ -433,12 +415,11 @@ function inferTheme(text, keywords) {
   return "상처 이후 일상을 회복해 가는 개인적 서사";
 }
 
-async function generateOpenAiImage({ apiKey, model, size, prompt }) {
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
+async function generateOpenAiImage({ model, size, prompt }) {
+  const response = await fetch("/api/image", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model,

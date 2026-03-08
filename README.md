@@ -2,46 +2,45 @@
 
 사용자 글을 교정/편집하고, 글 기반 이미지 프롬프트/생성을 지원하는 HTML5 + JavaScript 웹서비스입니다.
 
-## c의 최종 결정 (앱 vs 웹)
-- 결정: **웹서비스**
-- 이유:
-1. 설치 없이 브라우저에서 바로 사용 가능
-2. GitHub Pages 배포가 쉬움
-3. 파일(PDF/텍스트) 기반 작업 흐름과 잘 맞음
-
-## 역할 분담 (a/b/c)
-1. `c`(시니어 엔지니어): 아키텍처 결정, 안정성 기준 설정
-2. `a`(프로그래밍 전문가): 구현 담당 (UI/분석/교정 로직)
-3. `b`(편집자): 결과 품질 점검 (흐름/온도/독자 관점)
+## 핵심 변경
+- 클라이언트에서 API 키를 직접 입력하지 않습니다.
+- 서버가 `OPENAI_API_KEY` 환경변수를 읽어 OpenAI API를 호출합니다.
+- 따라서 GitHub Pages(정적 호스팅) 단독으로는 AI 기능이 동작하지 않습니다.
 
 ## 주요 기능
 1. 오타/띄어쓰기/문장부호 로컬 교정
-2. 선택형 AI 고급 교정(OpenAI API Key 입력 시)
+2. 서버 프록시 기반 AI 고급 교정
 3. 변경분 `**Bold**` 표시
 4. 변경 이력 + 수정 이유 자동 기록
 5. 편집자 평가 의견 자동 생성
-6. 제공받은 샘플 문체를 내부 편집 가이드로 반영(사용자 입력 UI 없음)
-7. 원문 기반 이미지 프롬프트 자동 제안(ChatGPT/Canva/Gemini)
-8. OpenAI 이미지 API 기반 이미지 생성/미리보기
+6. 원문 기반 이미지 프롬프트 자동 제안(ChatGPT/Canva/Gemini)
+7. OpenAI 이미지 API 기반 이미지 생성/미리보기
 
-## 사용 프레임워크/라이브러리
+## 기술 구성
 1. HTML5
 2. Vanilla JavaScript (ES Modules)
+3. Node.js + Express (OpenAI 프록시 API)
 
-## 실행 방법
-1. 이 폴더를 열고 `index.html`을 브라우저에서 실행
-2. 교정할 원문 입력
-3. 필요 시 OpenAI API Key 입력 후 `교정 실행`
-4. 이미지 섹션에서 `이미지 프롬프트 제안` 또는 `ChatGPT 이미지 생성` 실행
+## 로컬 실행
+1. Node.js 18+ 설치
+2. 프로젝트 폴더에서 실행:
+```bash
+npm install
+OPENAI_API_KEY=여기에_키 npm start
+```
+3. 브라우저에서 `http://localhost:3000` 접속
 
-## GitHub Pages 배포
-1. GitHub에 `warm-editor-web` 폴더를 새 저장소로 업로드
-2. 저장소 `Settings > Pages`로 이동
-3. Source를 `Deploy from a branch`로 선택
-4. `main` 브랜치 `/ (root)` 선택 후 저장
-5. 생성된 URL 접속
+## GitHub 시크릿 관련 중요 사항
+- GitHub 저장소 시크릿은 **GitHub Actions 실행 시점**에만 사용 가능합니다.
+- 브라우저에서 열리는 GitHub Pages 앱은 저장소 시크릿을 런타임에 읽을 수 없습니다.
+- AI 기능을 쓰려면 서버가 있는 배포(예: Render/Railway/Fly.io/Vercel Serverless)가 필요합니다.
+
+## 권장 배포 방식
+1. 이 저장소를 Render/Railway 같은 Node 런타임 서비스에 연결
+2. 환경변수 `OPENAI_API_KEY` 등록
+3. Start Command: `npm start`
+4. 배포 URL로 접속
 
 ## 제한 사항
-1. AI 모드는 API 키가 필요합니다.
-2. 로컬 규칙 교정은 보조 기능이며, 완전한 문학 편집은 AI 모드가 더 정확합니다.
-3. Canva/Gemini는 현재 API 직접 연동이 아니라 프롬프트 제안 + 서비스 이동 방식입니다.
+1. 서버 환경변수 `OPENAI_API_KEY`가 없으면 AI 교정/이미지 생성은 실패하고 로컬 교정만 동작합니다.
+2. Canva/Gemini는 API 직접 연동이 아니라 프롬프트 제안 + 서비스 이동 방식입니다.
